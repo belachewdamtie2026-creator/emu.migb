@@ -1,19 +1,17 @@
 import streamlit as st
-import pandas as pd
 from datetime import datetime
-import os
 import requests
 import qrcode
 from io import BytesIO
 
-# --- 1. የቴሌግራም መረጃ (የተስተካከለ) ---
+# --- 1. የቴሌግራም መረጃ ---
 BOT_TOKEN = "8779279617:AAEiHJY-R5rDJXpddYh54RhrLhVZxAOnTkI"
-CHAT_ID = "1066005872"  # አሁን ትዕዛዙ ቀጥታ ላንተ ይመጣል
+CHAT_ID = "1066005872"
 OWNER_PHONE = "0919299256"
 
 def send_telegram_msg(message):
     url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
-    payload = {"chat_id": CHAT_ID, "text": message, "parse_mode": "HTML"}
+    payload = {"chat_id": CHAT_ID, "text": message, "parse_mode": "HTML", "disable_web_page_preview": True}
     try:
         response = requests.post(url, data=payload)
         return response.status_code == 200
@@ -29,47 +27,83 @@ menu = {
     "ዳቦ": 10.00, "እንቁላል": 120.00, "ድንች ፍርፍር": 80.00
 }
 
-# --- 3. QR Code ዝግጅት ---
+# --- 3. Sidebar (QR Code) ---
 app_url = "https://emumigb2018.streamlit.app/" 
 qr_img = qrcode.make(app_url)
 buf = BytesIO()
 qr_img.save(buf, format="PNG")
 
-# --- 4. Sidebar ---
 st.sidebar.title("🍱 እሙ ምግብ ቤት")
 st.sidebar.write(f"📞 ባለቤት: {OWNER_PHONE}")
-st.sidebar.markdown("---")
-st.sidebar.write("📲 ለደንበኞች ያጋሩ")
-st.sidebar.image(buf.getvalue(), caption="ይህንን ስካን አድርገው ይዘዙ")
+st.sidebar.image(buf.getvalue(), caption="ለጓደኛዎ ያጋሩ")
 
-# --- 5. ዋናው ገጽ ---
-st.title("🍳 እንኳን ወደ እሙ ምግብ ቤት በደህና መጡ")
-st.write("ምግቦችን እዚህ ይዘዙ - ወዲያውኑ እናዘጋጃለን!")
+# --- 4. ዋናው ገጽ ---
+st.title("🍳 እሙ ምግብ ቤት")
+st.write("ምግቦችን እዚህ ይዘዙ - መኖሩን በቴሌግራም እናሳውቅዎታለን!")
 
 customer_name = st.text_input("የእርስዎ ስም")
+telegram_username = st.text_input("የቴሌግራም መለያ (Username)", placeholder="@example")
 food = st.selectbox("ምን መመገብ ይፈልጋሉ?", list(menu.keys()))
 
 unit_price = menu[food]
-st.info(f"💰 የ፩ {food} ዋጋ፦ **{unit_price:.2f} ብር**")
-
 qty = st.number_input("ብዛት", min_value=1, value=1, step=1)
 total_bill = unit_price * qty
-st.subheader(f"💵 ጠቅላላ ሂሳብ፦ {total_bill:.2f} ብር")
+
+st.markdown(f"### 💰 ሂሳብ: **{total_bill:.2f} ብር**")
 
 if st.button("ትዕዛዝ አስተላልፍ 🚀"):
-    if customer_name:
+    if customer_name and telegram_username:
+        clean_username = telegram_username.replace("@", "").strip()
+        customer_link = f"https://t.me/{clean_username}"
         now = datetime.now().strftime("%I:%M %p")
-        msg = (f"<b>🔔 አዲስ ትዕዛዝ ደርሷል!</b>\n\n"
-               f"👤 <b>ደንበኛ:</b> {customer_name}\n"
-               f"🍲 <b>ምግብ:</b> {food}\n"
-               f"🔢 <b>ብዛት:</b> {qty}\n"
-               f"💵 <b>ጠቅላላ ሂሳብ:</b> {total_bill} ብር\n"
-               f"🕒 <b>ሰዓት:</b> {now}")
-        
-        if send_telegram_msg(msg):
-            st.success(f"እናመሰግናለን {customer_name}! ትዕዛዝዎ ደርሶናል።")
+        order_id = datetime.now().strftime("%H%M%S") # ቀላል የትዕዛዝ ቁጥር
+
+        # 1. ለባለቤቱ የሚላክ መልዕክት
+        owner_msg = (
+            f"<b>🔔 አዲስ ትዕዛዝ #{order_id}</b>\n\n"
+            f"👤 <b>ደንበኛ:</b> <a href='{customer_link}'>{customer_name}</a>\n"
+            f"🍲 <b>ምግብ:</b> {food}\n"
+            f"🔢 <b>ብዛት:</b> {qty}\n"
+            f"💵 <b>ጠቅላላ ሂሳብ:</b> {total_bill} ብር\n"
+            f"🕒 <b>ሰዓት:</b> {now}"
+        )
+
+        if send_telegram_msg(owner_msg):
+            st.success("ትዕዛዝዎ በተሳካ ሁኔታ ተልኳል!")
+            
+            # --- 5. ለደንበኛው የሚታይ ሪሲት (Receipt) ---
+            st.markdown("---")
+            with st.container():
+                st.markdown(f"""
+                <div style="border: 2px dashed #f0f2f6; padding: 20px; border-radius: 10px; background-color: #ffffff; color: #333;">
+                    <h2 style="text-align: center; color: #ff4b4b;">🧾 እሙ ምግብ ቤት</h2>
+                    <p style="text-align: center;">የሽያጭ ማረጋገጫ / Receipt</p>
+                    <hr>
+                    <p><b>የትዕዛዝ ቁጥር:</b> #{order_id}</p>
+                    <p><b>ቀንና ሰዓት:</b> {datetime.now().strftime('%Y-%m-%d %I:%M %p')}</p>
+                    <p><b>የደንበኛ ስም:</b> {customer_name}</p>
+                    <hr>
+                    <table style="width:100%">
+                        <tr>
+                            <th style="text-align:left">ምግብ</th>
+                            <th style="text-align:center">ብዛት</th>
+                            <th style="text-align:right">ዋጋ</th>
+                        </tr>
+                        <tr>
+                            <td>{food}</td>
+                            <td style="text-align:center">{qty}</td>
+                            <td style="text-align:right">{unit_price:.2f}</td>
+                        </tr>
+                    </table>
+                    <hr>
+                    <h3 style="text-align: right;">ጠቅላላ ሂሳብ: {total_bill:.2f} ብር</h3>
+                    <p style="font-size: 12px; color: gray; text-align: center;">ባለቤቱ መኖሩን አረጋግጠው በቴሌግራም @{clean_username} ይመልሱልዎታል።</p>
+                </div>
+                """, unsafe_allow_html=True)
+            
+            st.info("💡 ምክር፡ ይህንን ሪሲት ስክሪን-ሻት (Screenshot) አድርገው ይያዙ።")
             st.balloons()
         else:
-            st.error("ትዕዛዙ አልተላከም:: እባክዎ ቦቱን በቴሌግራም Start ማድረጉን ያረጋግጡ::")
+            st.error("ትዕዛዙን መላክ አልተቻለም። እባክዎ ኢንተርኔትዎን ያረጋግጡ።")
     else:
-        st.error("እባክዎ መጀመሪያ ስምዎን ያስገቡ!")
+        st.warning("እባክዎ መረጃዎችን በትክክል ይሙሉ!")
