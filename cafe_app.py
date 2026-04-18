@@ -6,18 +6,19 @@ import requests
 import qrcode
 from io import BytesIO
 
-# --- 1. የቴሌግራም መረጃ ---
+# --- 1. የቴሌግራም መረጃ (የተስተካከለ) ---
 BOT_TOKEN = "8779279617:AAEiHJY-R5rDJXpddYh54RhrLhVZxAOnTkI"
-CHAT_ID = "8779279617"
+CHAT_ID = "1066005872"  # አሁን ትዕዛዙ ቀጥታ ላንተ ይመጣል
 OWNER_PHONE = "0919299256"
 
 def send_telegram_msg(message):
     url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
     payload = {"chat_id": CHAT_ID, "text": message, "parse_mode": "HTML"}
     try:
-        requests.post(url, data=payload)
+        response = requests.post(url, data=payload)
+        return response.status_code == 200
     except:
-        pass
+        return False
 
 # --- 2. የገጽ ዝግጅት ---
 st.set_page_config(page_title="እሙ ምግብ ቤት", layout="centered", page_icon="🍳")
@@ -28,7 +29,7 @@ menu = {
     "ሻይ": 10.00, "ቡና": 20.00, "ለስላሳ": 35.00
 }
 
-# --- 3. QR Code (በአዲሱ ሊንክህ የተስተካከለ) ---
+# --- 3. QR Code ዝግጅት ---
 app_url = "https://emu-migib.streamlit.app" 
 qr_img = qrcode.make(app_url)
 buf = BytesIO()
@@ -65,8 +66,10 @@ if st.button("ትዕዛዝ አስተላልፍ 🚀"):
                f"💵 <b>ጠቅላላ ሂሳብ:</b> {total_bill} ብር\n"
                f"🕒 <b>ሰዓት:</b> {now}")
         
-        send_telegram_msg(msg)
-        st.success(f"እናመሰግናለን {customer_name}! ትዕዛዝዎ ደርሶናል።")
-        st.balloons()
+        if send_telegram_msg(msg):
+            st.success(f"እናመሰግናለን {customer_name}! ትዕዛዝዎ ደርሶናል።")
+            st.balloons()
+        else:
+            st.error("ትዕዛዙ አልተላከም:: እባክዎ ቦቱን በቴሌግራም Start ማድረጉን ያረጋግጡ::")
     else:
         st.error("እባክዎ መጀመሪያ ስምዎን ያስገቡ!")
