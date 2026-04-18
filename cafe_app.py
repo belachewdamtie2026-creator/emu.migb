@@ -3,6 +3,7 @@ from datetime import datetime
 import requests
 import qrcode
 from io import BytesIO
+import urllib.parse
 
 # --- 1. የቴሌግራም መረጃ ---
 BOT_TOKEN = "8779279617:AAEiHJY-R5rDJXpddYh54RhrLhVZxAOnTkI"
@@ -39,7 +40,6 @@ st.sidebar.image(buf.getvalue(), caption="ይህንን ስካን አድርገው
 
 # --- 4. ዋናው ገጽ ---
 st.title("🍳 እሙ ምግብ ቤት")
-st.write("እንኳን ደህና መጡ! የሚፈልጉትን ምግብ ይምረጡ።")
 
 customer_name = st.text_input("የእርስዎ ስም")
 telegram_username = st.text_input("የቴሌግራም መለያ (Username)", placeholder="@example")
@@ -49,51 +49,37 @@ unit_price = menu[food]
 qty = st.number_input("ብዛት", min_value=1, value=1, step=1)
 total_bill = unit_price * qty
 
-st.markdown(f"### 💰 ጠቅላላ ሂሳብ: **{total_bill:.2f} ብር**")
-
 if st.button("ትዕዛዝ አስተላልፍ 🚀"):
     if customer_name and telegram_username:
         clean_username = telegram_username.replace("@", "").strip()
-        customer_link = f"https://t.me/{clean_username}"
+        
+        # የመልዕክት ቅጽ (Templates) ለባለቤቱ እንዲቀልላቸው
+        yes_msg = urllib.parse.quote(f"ሰላም {customer_name}፣ ደርሶናል እናመሰግናለን! ትዕዛዝዎን እያዘጋጀን ነው።")
+        no_msg = urllib.parse.quote(f"ይቅርታ {customer_name}፣ ለጊዜው {food} የለም፤ እባክዎ ሌላ ይዘዙ።")
+        
+        # የቴሌግራም ሊንኮች ከመልዕክት ጋር
+        confirm_link = f"https://t.me/{clean_username}?text={yes_msg}"
+        reject_link = f"https://t.me/{clean_username}?text={no_msg}"
+        
         now = datetime.now().strftime("%I:%M %p")
-        order_id = datetime.now().strftime("%H%M%S")
-
-        # ለባለቤቱ የሚላክ መልዕክት
+        
+        # ባለቤቱ ጋር የሚሄደው መልዕክት
         owner_msg = (
-            f"<b>🔔 አዲስ ትዕዛዝ #{order_id}</b>\n\n"
-            f"👤 <b>ደንበኛ:</b> <a href='{customer_link}'>{customer_name}</a>\n"
-            f"🍲 <b>ምግብ:</b> {food}\n"
-            f"🔢 <b>ብዛት:</b> {qty}\n"
+            f"<b>🔔 አዲስ ትዕዛዝ ደርሷል!</b>\n\n"
+            f"👤 <b>ደንበኛ:</b> {customer_name}\n"
+            f"🍲 <b>ምግብ:</b> {food} ({qty})\n"
             f"💵 <b>ሂሳብ:</b> {total_bill} ብር\n"
             f"🕒 <b>ሰዓት:</b> {now}\n\n"
-            f"👇 <b>ለደንበኛው መልስ ለመስጠት ስሙን ይጫኑ!</b>"
+            f"👇 <b>አማራጮች (ሲጫኑት መልዕክቱ ተጽፎ ይጠብቅዎታል)፦</b>\n\n"
+            f"✅ <a href='{confirm_link}'>ደርሶናል ለማለት እዚህ ይጫኑ</a>\n\n"
+            f"❌ <a href='{reject_link}'>የለም ለማለት እዚህ ይጫኑ</a>"
         )
 
         if send_telegram_msg(owner_msg):
-            # --- 5. ለደንበኛው የሚታይ ማረጋገጫ ---
-            st.success("✅ ትዕዛዝዎ በተሳካ ሁኔታ ተልኳል!")
-            
-            # የደረሰኝ ዲዛይን
-            st.markdown(f"""
-            <div style="border: 2px solid #4CAF50; padding: 15px; border-radius: 10px; background-color: #f9f9f9; color: #333;">
-                <h3 style="text-align: center; color: #4CAF50;">🧾 የትዕዛዝ ማረጋገጫ</h3>
-                <p><b>የደንበኛ ስም:</b> {customer_name}</p>
-                <p><b>የታዘዘው ምግብ:</b> {food} ({qty})</p>
-                <p><b>ጠቅላላ ሂሳብ:</b> {total_bill:.2f} ብር</p>
-                <hr>
-                <p style="text-align: center; font-weight: bold;">ባለቤቱ አሁን በቴሌግራም የሚከተለውን መልስ ይልኩልዎታል፡</p>
-                <div style="background-color: #e1f5fe; padding: 10px; border-radius: 5px; margin-bottom: 5px;">
-                    ✅ <b>"ደርሶናል እናመሰግናለን! ትዕዛዝዎን እያዘጋጀን ነው።"</b>
-                </div>
-                <div style="background-color: #ffebee; padding: 10px; border-radius: 5px;">
-                    ❌ <b>"ይቅርታ ለጊዜው ይሄ ምግብ የለም እባክዎ ሌላ ይዘዙ።"</b>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
-            
-            st.info(f"💡 {customer_name} ሆይ፤ እባክዎ ቴሌግራምዎ ላይ ባለቤቱ መልስ እስኪልኩዎት ይጠብቁ።")
+            st.success("✅ ትዕዛዝዎ ተልኳል!")
+            st.info("ባለቤቱ መኖሩን አረጋግጠው በቴሌግራም መልስ እስኪልኩዎት ይጠብቁ።")
             st.balloons()
         else:
-            st.error("ትዕዛዙን መላክ አልተቻለም። እባክዎ ኢንተርኔትዎን ያረጋግጡ።")
+            st.error("ትዕዛዙ አልተላከም::")
     else:
-        st.warning("እባክዎ ስምዎን እና የቴሌግራም መለያዎን ያስገቡ!")
+        st.warning("እባክዎ መረጃዎችን በትክክል ይሙሉ!")
