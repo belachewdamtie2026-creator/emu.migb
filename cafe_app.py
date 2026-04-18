@@ -22,7 +22,6 @@ def send_telegram_msg(message):
 # --- 2. የገጽ ዝግጅት ---
 st.set_page_config(page_title="እሙ ምግብ ቤት", layout="centered", page_icon="🍳")
 
-# የትዕዛዝ ቅርጫት ዝግጅት (Session State)
 if 'cart' not in st.session_state:
     st.session_state.cart = []
 
@@ -44,14 +43,10 @@ st.sidebar.image(buf.getvalue(), caption="ይህንን ስካን አድርገው
 
 # --- 4. ዋናው ገጽ ---
 st.title("🍳 እሙ ምግብ ቤት")
-st.write("እንኳን ደህና መጡ! የሚፈልጉትን ምግቦች መርጠው 'ወደ ቅርጫት ጨምር' የሚለውን ይጫኑ።")
-
 customer_name = st.text_input("የእርስዎ ስም")
 telegram_username = st.text_input("የቴሌግራም መለያ (Username)", placeholder="@example")
 
 st.markdown("---")
-
-# --- 5. ምግብ መምረጫ ---
 col1, col2 = st.columns([2, 1])
 with col1:
     food = st.selectbox("ምን መመገብ ይፈልጋሉ?", list(menu.keys()))
@@ -59,19 +54,16 @@ with col2:
     qty = st.number_input("ብዛት", min_value=1, value=1, step=1)
 
 if st.button("ወደ ቅርጫት ጨምር 🛒"):
-    st.session_state.cart.append({
-        "ምግብ": food,
-        "ብዛት": qty,
-        "ዋጋ": menu[food] * qty
-    })
+    st.session_state.cart.append({"ምግብ": food, "ብዛት": qty, "ዋጋ": menu[food] * qty})
     st.toast(f"{food} ተጨምሯል!")
 
-# --- 6. የቅርጫት ዝርዝር ማሳያ ---
+# --- 5. የቅርጫት ዝርዝር ---
 if st.session_state.cart:
     st.markdown("### 🛒 የመረጧቸው ምግቦች")
     total_bill = 0
+    receipt_rows = ""
+    food_summary = "" # ለቴሌግራም መልዕክት
     
-    # ሰንጠረዥ ለደንበኛው ለማሳየት
     for i, item in enumerate(st.session_state.cart):
         c1, c2, c3, c4 = st.columns([3, 1, 2, 1])
         c1.write(item["ምግብ"])
@@ -81,6 +73,8 @@ if st.session_state.cart:
             st.session_state.cart.pop(i)
             st.rerun()
         total_bill += item["ዋጋ"]
+        receipt_rows += f"<tr><td>{item['ምግብ']}</td><td style='text-align:center'>{item['ብዛት']}</td><td style='text-align:right'>{item['ዋጋ']:.2f}</td></tr>"
+        food_summary += f"• {item['ምግብ']} ({item['ብዛት']})\n"
 
     st.markdown(f"#### 💰 ጠቅላላ ሂሳብ: **{total_bill:.2f} ብር**")
 
@@ -89,52 +83,35 @@ if st.session_state.cart:
             clean_username = telegram_username.replace("@", "").strip()
             order_id = datetime.now().strftime("%H%M%S")
             
-            # ለቴሌግራም የሚሆን ዝርዝር ማዘጋጀት
-            food_list_msg = ""
-            receipt_rows = ""
-            for item in st.session_state.cart:
-                food_list_msg += f"• {item['ምግብ']} ({item['ብዛት']})\n"
-                receipt_rows += f"<tr><td>{item['ምግብ']}</td><td style='text-align:center'>{item['ብዛት']}</td><td style='text-align:right'>{item['ዋጋ']:.2f}</td></tr>"
-
+            # የምላሽ መልዕክቶች (Templates)
             yes_msg = urllib.parse.quote(f"ሰላም {customer_name}፣ ትዕዛዝዎ #{order_id} ደርሶናል። እያዘጋጀን ነው።")
+            no_msg = urllib.parse.quote(f"ይቅርታ {customer_name}፣ ካዘዙት ውስጥ አንዳንዶቹ ስለሌሉ እባክዎ በስልክ ያግኙን ወይም በድጋሚ ይዘዙ።")
+
             confirm_link = f"https://t.me/{clean_username}?text={yes_msg}"
+            reject_link = f"https://t.me/{clean_username}?text={no_msg}"
 
             owner_msg = (
                 f"<b>🔔 አዲስ ትዕዛዝ #{order_id}</b>\n\n"
                 f"👤 <b>ደንበኛ:</b> {customer_name}\n"
-                f"🍲 <b>ምግቦች:</b>\n{food_list_msg}\n"
-                f"💵 <b>ጠቅላላ ሂሳብ:</b> {total_bill} ብር\n\n"
-                f"✅ <a href='{confirm_link}'>ደርሶናል ለማለት</a>"
+                f"🍲 <b>ዝርዝር:</b>\n{food_summary}\n"
+                f"💵 <b>ሂሳብ:</b> {total_bill} ብር\n\n"
+                f"👇 <b>መልስ ለመስጠት:</b>\n"
+                f"✅ <a href='{confirm_link}'>ደርሶናል ለማለት</a>\n"
+                f"❌ <a href='{reject_link}'>የለም/አልተሳካም ለማለት</a>"
             )
 
             if send_telegram_msg(owner_msg):
                 st.success("✅ ትዕዛዝዎ በተሳካ ሁኔታ ተልኳል!")
-                
-                # --- 7. ለደንበኛው የሚታይ ሪሲት ---
                 st.markdown(f"""
-                <div style="border: 2px dashed #4CAF50; padding: 20px; border-radius: 10px; background-color: #ffffff; color: #333; font-family: sans-serif;">
-                    <h2 style="text-align: center; color: #4CAF50; margin-bottom: 0;">🧾 እሙ ምግብ ቤት</h2>
-                    <p style="text-align: center; margin-top: 0; font-size: 14px;">የሽያጭ ማረጋገጫ / Receipt</p>
-                    <hr>
-                    <p><b>የትዕዛዝ ቁጥር:</b> #{order_id} | <b>ስም:</b> {customer_name}</p>
-                    <table style="width:100%">
-                        <tr style="border-bottom: 1px solid #ddd;">
-                            <th style="text-align:left">ምግብ</th>
-                            <th style="text-align:center">ብዛት</th>
-                            <th style="text-align:right">ዋጋ</th>
-                        </tr>
-                        {receipt_rows}
-                    </table>
-                    <hr>
-                    <h3 style="text-align: right;">ጠቅላላ ሂሳብ: {total_bill:.2f} ብር</h3>
-                </div>
-                """, unsafe_allow_html=True)
-                
-                st.session_state.cart = [] # ትዕዛዙ ካለቀ ቅርጫቱን ባዶ ማድረግ
+                <div style="border: 2px dashed #4CAF50; padding: 20px; border-radius: 10px; background-color: #ffffff; color: #333;">
+                    <h2 style="text-align: center; color: #4CAF50;">🧾 እሙ ምግብ ቤት</h2>
+                    <p><b>ትዕዛዝ ቁጥር:</b> #{order_id} | <b>ስም:</b> {customer_name}</p>
+                    <table style="width:100%">{receipt_rows}</table>
+                    <hr><h3 style="text-align: right;">ጠቅላላ: {total_bill:.2f} ብር</h3>
+                </div>""", unsafe_allow_html=True)
+                st.session_state.cart = [] 
                 st.balloons()
             else:
-                st.error("ትዕዛዙ አልተላከም:: እባክዎ ኢንተርኔትዎን ያረጋግጡ::")
+                st.error("ትዕዛዙ አልተላከም::")
         else:
-            st.warning("እባክዎ ስምዎን እና የቴሌግራም መለያዎን በትክክል ያስገቡ!")
-else:
-    st.info("💡 ገና ምንም ምግብ አልመረጡም። ከላይ መርጠው 'ወደ ቅርጫት ጨምር' የሚለውን ይጫኑ።")
+            st.warning("እባክዎ ስምዎን እና የቴሌግራም መለያዎን ያስገቡ!")
