@@ -40,6 +40,7 @@ st.sidebar.image(buf.getvalue(), caption="ይህንን ስካን አድርገው
 
 # --- 4. ዋናው ገጽ ---
 st.title("🍳 እሙ ምግብ ቤት")
+st.write("እንኳን ደህና መጡ! የሚፈልጉትን ምግብ ይምረጡ።")
 
 customer_name = st.text_input("የእርስዎ ስም")
 telegram_username = st.text_input("የቴሌግራም መለያ (Username)", placeholder="@example")
@@ -49,37 +50,69 @@ unit_price = menu[food]
 qty = st.number_input("ብዛት", min_value=1, value=1, step=1)
 total_bill = unit_price * qty
 
+st.markdown(f"### 💰 ጠቅላላ ሂሳብ: **{total_bill:.2f} ብር**")
+
 if st.button("ትዕዛዝ አስተላልፍ 🚀"):
     if customer_name and telegram_username:
         clean_username = telegram_username.replace("@", "").strip()
-        
-        # የመልዕክት ቅጽ (Templates) ለባለቤቱ እንዲቀልላቸው
+        order_id = datetime.now().strftime("%H%M%S")
+        now = datetime.now().strftime("%I:%M %p")
+
+        # ለባለቤቱ የሚላኩ መልዕክቶች ተጽፈው እንዲዘጋጁ (Templates)
         yes_msg = urllib.parse.quote(f"ሰላም {customer_name}፣ ደርሶናል እናመሰግናለን! ትዕዛዝዎን እያዘጋጀን ነው።")
-        no_msg = urllib.parse.quote(f"ይቅርታ {customer_name}፣ ለጊዜው {food} የለም፤ እባክዎ ሌላ ይዘዙ።")
+        no_msg = urllib.parse.quote(f"ይቅርታ {customer_name}፣ ለጊዜው '{food}' የለም፤ እባክዎ ሌላ ይዘዙ።")
         
-        # የቴሌግራም ሊንኮች ከመልዕክት ጋር
         confirm_link = f"https://t.me/{clean_username}?text={yes_msg}"
         reject_link = f"https://t.me/{clean_username}?text={no_msg}"
-        
-        now = datetime.now().strftime("%I:%M %p")
-        
-        # ባለቤቱ ጋር የሚሄደው መልዕክት
+
+        # 1. ለባለቤቱ የሚላክ የቴሌግራም መልዕክት
         owner_msg = (
-            f"<b>🔔 አዲስ ትዕዛዝ ደርሷል!</b>\n\n"
+            f"<b>🔔 አዲስ ትዕዛዝ #{order_id}</b>\n\n"
             f"👤 <b>ደንበኛ:</b> {customer_name}\n"
             f"🍲 <b>ምግብ:</b> {food} ({qty})\n"
-            f"💵 <b>ሂሳብ:</b> {total_bill} ብር\n"
-            f"🕒 <b>ሰዓት:</b> {now}\n\n"
-            f"👇 <b>አማራጮች (ሲጫኑት መልዕክቱ ተጽፎ ይጠብቅዎታል)፦</b>\n\n"
-            f"✅ <a href='{confirm_link}'>ደርሶናል ለማለት እዚህ ይጫኑ</a>\n\n"
-            f"❌ <a href='{reject_link}'>የለም ለማለት እዚህ ይጫኑ</a>"
+            f"💵 <b>ሂሳብ:</b> {total_bill} ብር\n\n"
+            f"👇 <b>መልስ ለመስጠት አንዱን ይጫኑ:</b>\n"
+            f"✅ <a href='{confirm_link}'>ደርሶናል ለማለት</a>\n"
+            f"❌ <a href='{reject_link}'>የለም ለማለት</a>"
         )
 
         if send_telegram_msg(owner_msg):
-            st.success("✅ ትዕዛዝዎ ተልኳል!")
-            st.info("ባለቤቱ መኖሩን አረጋግጠው በቴሌግራም መልስ እስኪልኩዎት ይጠብቁ።")
+            st.success("✅ ትዕዛዝዎ በተሳካ ሁኔታ ተልኳል!")
+            
+            # --- 5. ለደንበኛው የሚታይ ሪሲት (Receipt) ---
+            st.markdown("---")
+            st.markdown(f"""
+            <div style="border: 2px dashed #4CAF50; padding: 20px; border-radius: 10px; background-color: #ffffff; color: #333; font-family: sans-serif;">
+                <h2 style="text-align: center; color: #4CAF50; margin-bottom: 0;">🧾 እሙ ምግብ ቤት</h2>
+                <p style="text-align: center; margin-top: 0; font-size: 14px;">የሽያጭ ማረጋገጫ / Receipt</p>
+                <hr>
+                <p><b>የትዕዛዝ ቁጥር:</b> #{order_id}</p>
+                <p><b>የደንበኛ ስም:</b> {customer_name}</p>
+                <p><b>ቀን:</b> {datetime.now().strftime('%Y-%m-%d %I:%M %p')}</p>
+                <hr>
+                <table style="width:100%">
+                    <tr style="border-bottom: 1px solid #ddd;">
+                        <th style="text-align:left">ምግብ</th>
+                        <th style="text-align:center">ብዛት</th>
+                        <th style="text-align:right">ዋጋ</th>
+                    </tr>
+                    <tr>
+                        <td>{food}</td>
+                        <td style="text-align:center">{qty}</td>
+                        <td style="text-align:right">{unit_price:.2f}</td>
+                    </tr>
+                </table>
+                <hr>
+                <h3 style="text-align: right; margin-bottom: 0;">ጠቅላላ ሂሳብ: {total_bill:.2f} ብር</h3>
+                <p style="font-size: 12px; color: gray; text-align: center; margin-top: 20px;">
+                    ባለቤቱ መኖሩን አረጋግጠው በቴሌግራም @{clean_username} ምላሽ ይሰጡዎታል።
+                </p>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            st.info("💡 ደንበኛ ሆይ፤ ይህንን ሪሲት ስክሪን-ሻት (Screenshot) አድርገው ይያዙ።")
             st.balloons()
         else:
-            st.error("ትዕዛዙ አልተላከም::")
+            st.error("ትዕዛዙ አልተላከም:: እባክዎ ኢንተርኔትዎን ያረጋግጡ::")
     else:
-        st.warning("እባክዎ መረጃዎችን በትክክል ይሙሉ!")
+        st.warning("እባክዎ ስምዎን እና የቴሌግራም መለያዎን በትክክል ያስገቡ!")
