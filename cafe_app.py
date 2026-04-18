@@ -24,13 +24,13 @@ def send_telegram_msg(message):
 st.set_page_config(page_title="እሙ ምግብ ቤት", layout="centered", page_icon="🍳")
 
 menu = {
-    "በያይነቱ": 50.00, "ሽሮ ፈሰስ": 40.00, "ምስር ወጥ": 45.00,
-    "ፓስታ በቲማቲም": 50.00, "ጥብስ": 200.00, "ልዩ ቁርስ": 80.00,
-    "ሻይ": 10.00, "ቡና": 20.00, "ለስላሳ": 35.00
+    "በያይነት": 100.00, "ሽሮ ፈሰስ": 70.00, "ምስር ወጥ": 80.00,
+    "ፓስታ በአትክልት": 90.00, "ጥብስ": 200.00, "ስጋ ፍርፍር": 160.00,
+    "ዳቦ": 10.00, "እንቁላል": 120.00, "ድንች ፍርፍር": 80.00
 }
 
 # --- 3. QR Code ዝግጅት ---
-app_url = "https://emu-migib.streamlit.app" 
+app_url = "https://emumigb2018.streamlit.app/" 
 qr_img = qrcode.make(app_url)
 buf = BytesIO()
 qr_img.save(buf, format="PNG")
@@ -43,8 +43,8 @@ st.sidebar.write("📲 ለደንበኞች ያጋሩ")
 st.sidebar.image(buf.getvalue(), caption="ይህንን ስካን አድርገው ይዘዙ")
 
 # --- 5. ዋናው ገጽ ---
-st.title("🍳 እንኳን ወደ እሙ ምግብ ቤት መጡ")
-st.write("ትኩስ ምግቦችን እዚህ ይዘዙ - ወዲያውኑ እናዘጋጃለን!")
+st.title("🍳 እንኳን ወደ እሙ ምግብ ቤት በደህና መጡ")
+st.write("ምግቦችን እዚህ ይዘዙ - ወዲያውኑ እናዘጋጃለን!")
 
 customer_name = st.text_input("የእርስዎ ስም")
 food = st.selectbox("ምን መመገብ ይፈልጋሉ?", list(menu.keys()))
