@@ -57,16 +57,16 @@ st.markdown("---")
 
 # --- 5. የምግብ መምረጫ ክፍል ---
 st.subheader("🍽 ምን መመገብ ይፈልጋሉ?")
-selection_mode = st.radio("የአቀራረብ ምርጫ", ["ለየብቻ (ነጠላ)", "በአንድ እቃ (Combo)"], horizontal=True)
+selection_mode = st.radio("የአቀራረብ ምርጫ", ["ለየብቻ", "በአንድ እቃ (Combo)"], horizontal=True)
 
-if selection_mode == "ለየብቻ (ነጠላ)":
+if selection_mode == "ለየብቻ":
     col1, col2 = st.columns([3, 1])
     with col1:
         food = st.selectbox("ምግብ ይምረጡ", list(menu.keys()))
     with col2:
         qty = st.number_input("ብዛት", min_value=1, value=1, step=1)
     
-    if st.button("ወደ ቅርጫት ጨምር 🛒", use_container_width=True):
+    if st.button("የመረጥካቸውን ጨምር/ሪ 🛒", use_container_width=True):
         st.session_state.cart.append({
             "ምግብ": food, 
             "ብዛት": qty, 
