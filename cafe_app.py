@@ -39,7 +39,7 @@ menu = {
 }
 
 # --- 3. Sidebar (QR Code) ---
-app_url = "https://emumigb2018.streamlit.app/" 
+app_url = "https://emumigb-2018.streamlit.app/" 
 qr_img = qrcode.make(app_url)
 buf = BytesIO()
 qr_img.save(buf, format="PNG")
