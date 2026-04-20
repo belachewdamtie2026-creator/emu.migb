@@ -1,8 +1,8 @@
 import streamlit as st
 import pandas as pd
+import requests
 import qrcode
 from io import BytesIO
-import requests
 
 # --- 1. ኮንፊገሬሽን ---
 BOT_TOKEN = "8779279617:AAEiHJY-R5rDJXpddYh54RhrLhVZxAOnTkI"
@@ -23,11 +23,6 @@ st.markdown("""
 <style>
     .stApp { background-color: #fdfdfd; }
     .main-header { text-align: center; color: #E64A19; font-weight: bold; }
-    .order-box {
-        background-color: white; padding: 15px; border-radius: 12px;
-        margin-bottom: 10px; border-left: 6px solid #E64A19;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -76,7 +71,6 @@ if st.button("ወደ ቅርጫት ጨምር 🛒", use_container_width=True):
         st.toast("✅ ተጨምሯል")
 
 if st.session_state.cart:
-    st.divider()
     total_bill = sum(item['ዋጋ'] for item in st.session_state.cart)
     summary = "\n".join([f"• {item['ዝርዝር']} [{item['ሁኔታ']}]" for item in st.session_state.cart])
     
@@ -84,23 +78,25 @@ if st.session_state.cart:
         if first_name and username_input:
             clean_username = username_input.replace("@", "").lower().strip()
             
-            # ደንበኛው ሊንኩን ተጭኖ እንዲያወራው ለባለቤቱ የሚላክ መልዕክት
-            customer_link = f"https://t.me/{clean_username}"
+            # ባለቤቱ ምላሽ ለመስጠት የሚጠቀምባቸው ሊንኮች
+            accept_link = f"https://t.me/{clean_username}?text=ሰላም {first_name}፣ ያዘዙት ምግብ አለ፤ እየተዘጋጀ ነው። ✅"
+            reject_link = f"https://t.me/{clean_username}?text=ይቅርታ {first_name}፣ ያዘዙት ምግብ ለጊዜው አልቋል። ❌"
             
             owner_msg = (
                 f"🔔 <b>አዲስ ትዕዛዝ</b>\n"
                 f"👤 ደንበኛ: {first_name}\n"
-                f"💬 Username: @{clean_username}\n"
-                f"🔗 ደንበኛውን ለማግኘት: <a href='{customer_link}'>እዚህ ይጫኑ</a>\n\n"
+                f"💬 Username: @{clean_username}\n\n"
                 f"📝 ዝርዝር:\n{summary}\n"
-                f"💰 ጠቅላላ: <b>{total_bill:.2f} ብር</b>"
+                f"💰 ጠቅላላ: <b>{total_bill:.2f} ብር</b>\n\n"
+                f"<b>ምላሽ ለመስጠት፦</b>\n"
+                f"✅ <a href='{accept_link}'>አለ ለማለት</a>\n"
+                f"❌ <a href='{reject_link}'>የለም ለማለት</a>"
             )
             
             send_to_owner(owner_msg)
-            st.success(f"እናመሰግናለን {first_name}! ትዕዛዝዎ ተልኳል። ባለቤቱ በቴሌግራምዎ ያገኝዎታል።")
+            st.success(f"ትዕዛዝዎ ተልኳል! ባለቤቱ በቴሌግራምዎ ያገኝዎታል።")
             st.session_state.cart = []
-            st.balloons()
         else:
-            st.warning("እባክዎ ስምዎን እና ቴሌግራም ዩዘርኔምዎን ያስገቡ።")
+            st.warning("እባክዎ ስምዎን እና ዩዘርኔምዎን ያስገቡ።")
 
 st.markdown(f"<p style='text-align:center; color:#718096; font-size:11px; margin-top:50px;'>Developer: <b>Belachew Damtie</b></p>", unsafe_allow_html=True)
