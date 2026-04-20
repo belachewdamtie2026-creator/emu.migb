@@ -18,59 +18,25 @@ def send_to_owner(message):
     except:
         pass
 
-# --- 2. ማራኪ ኢንተርፌስ (CSS) ---
-st.set_page_config(page_title="እሙ ምግብ ቤት", layout="centered", page_icon="🍲")
+# --- 2. የሚያምር ኢንተርፌስ (CSS) ---
+st.set_page_config(page_title="እሙ ምግብ ቤት", layout="centered", page_icon="🍳")
 
 st.markdown("""
 <style>
-    /* የገጹ ዳራ */
-    .stApp { background-color: #fcfcfc; }
-    
-    /* የርዕስ ዲዛይን */
-    .main-header { 
-        text-align: center; 
-        color: #E64A19; 
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        font-size: 45px;
-        margin-bottom: 0px;
-    }
-    
-    /* የምግብ ካርዶች */
+    .stApp { background-color: #fdfdfd; }
+    .main-header { text-align: center; color: #E64A19; font-weight: bold; }
     .order-box {
-        background-color: white; 
-        padding: 18px; 
-        border-radius: 15px;
-        margin-bottom: 12px; 
-        border-left: 8px solid #E64A19;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.06);
+        background-color: white; padding: 15px; border-radius: 12px;
+        margin-bottom: 10px; border-left: 6px solid #E64A19;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.05);
     }
-    
-    /* የረሲት ዲዛይን */
     .receipt-box {
-        border: 2px dashed #E64A19; 
-        padding: 25px; 
-        border-radius: 15px;
-        background-color: #ffffff; 
-        font-family: 'Courier New', Courier, monospace; 
-        line-height: 1.6;
-        box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+        border: 2px dashed #E64A19; padding: 20px; border-radius: 10px;
+        background-color: #fff; font-family: monospace; line-height: 1.6;
     }
-    
-    /* የቁልፎች ዲዛይን */
     .stButton>button {
-        width: 100%; 
-        border-radius: 12px; 
-        height: 3.5em;
-        background-color: #E64A19; 
-        color: white; 
-        font-weight: bold;
-        border: none;
-        transition: 0.3s;
-    }
-    
-    .stButton>button:hover {
-        background-color: #bf360c;
-        box-shadow: 0 4px 12px rgba(230, 74, 25, 0.3);
+        width: 100%; border-radius: 8px; height: 3em;
+        background-color: #E64A19; color: white; border: none;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -81,26 +47,20 @@ MENU = {
     "ዳቦ": 10.00, "እንቁላል": 120.00, "ድንች ፍርፍር": 80.00
 }
 
-# --- ገጽታ ---
-st.markdown("<h1 class='main-header'>🍽️ እሙ ምግብ ቤት</h1>", unsafe_allow_html=True)
-st.markdown("<p style='text-align:center; color:#7f8c8d;'>ትኩስ እና ጣፋጭ ምግቦችን ከእኛ ዘንድ ይዘዙ!</p>", unsafe_allow_html=True)
+st.markdown("<h1 class='main-header'>🍳 እሙ ምግብ ቤት</h1>", unsafe_allow_html=True)
 
 if 'cart' not in st.session_state:
     st.session_state.cart = []
 if 'receipt_data' not in st.session_state:
     st.session_state.receipt_data = None
 
-# የተጠቃሚ መረጃ
-with st.container():
-    col_a, col_b = st.columns(2)
-    first_name = col_a.text_input("👤 ስም", placeholder="የእርሶ ስም")
-    username_input = col_b.text_input("💬 Telegram Username", placeholder="ያለ @ ምልክት ቢሆን ይመረጣል")
+col_a, col_b = st.columns(2)
+first_name = col_a.text_input("👤 ስም", placeholder="የመጀመሪያ ስም")
+username_input = col_b.text_input("💬 Telegram Username", placeholder="Username ያስገቡ")
 
 st.divider()
 
-# የማዘዣ አማራጮች
-st.subheader("🍱 ምርጫዎን ይግለጹ")
-packing_style = st.radio("**የአቀራረብ ሁኔታ**", ["ለየብቻ", "በአንድ እቃ"], horizontal=True)
+packing_style = st.radio("**የአቀራረብ ሁኔታ ይምረጡ**", ["ለየብቻ", "በአንድ እቃ"], horizontal=True)
 
 food_items_to_add = []
 if packing_style == "በአንድ እቃ":
@@ -108,13 +68,12 @@ if packing_style == "በአንድ እቃ":
     if selected_foods:
         for f in selected_foods:
             c1, c2 = st.columns([3, 1])
-            with c1: st.markdown(f"**🔹 {f}**")
+            with c1: st.write(f"**{f}**")
             qty = c2.number_input("ብዛት", 1, 10, 1, key=f"mixed_{f}", label_visibility="collapsed")
             food_items_to_add.append({"ምግብ": f, "ብዛት": qty})
 else:
-    col_f, col_q = st.columns([3, 1])
-    f = col_f.selectbox("የሚፈልጉትን ምግብ ይምረጡ", list(MENU.keys()))
-    qty = col_q.number_input("ብዛት", 1, 20, 1)
+    f = st.selectbox("የሚፈልጉትን ምግብ ይምረጡ", list(MENU.keys()))
+    qty = st.number_input("ብዛት", 1, 20, 1)
     food_items_to_add.append({"ምግብ": f, "ብዛት": qty})
 
 if st.button("ወደ ቅርጫት ጨምር 🛒"):
@@ -126,35 +85,24 @@ if st.button("ወደ ቅርጫት ጨምር 🛒"):
         else:
             for i in food_items_to_add:
                 st.session_state.cart.append({"ዝርዝር": f"{i['ምግብ']} (x{i['ብዛት']})", "ሁኔታ": "ለየብቻ", "ዋጋ": MENU[i['ምግብ']] * i['ብዛት']})
-        st.toast("✅ ወደ ቅርጫት ተጨምሯል!")
+        st.toast("✅ ተጨምሯል")
     else:
         st.warning("እባክዎ መጀመሪያ ምግብ ይምረጡ")
 
-# --- የቅርጫት ዝርዝር ---
+# --- የቅርጫት ዝርዝር እይታ ---
 if st.session_state.cart:
-    st.markdown("---")
     st.markdown("### 🛒 የእርስዎ ቅርጫት")
     total_bill = 0
     for i, item in enumerate(st.session_state.cart):
         col_item, col_del = st.columns([5, 1])
         with col_item:
-            st.markdown(f"""
-                <div class='order-box'>
-                    <div style='display:flex; justify-content:space-between;'>
-                        <b>{item['ዝርዝር']}</b>
-                        <b style='color:#E64A19;'>{item['ዋጋ']:.2f} ብር</b>
-                    </div>
-                    <small style='color:#7f8c8d;'>አቀራረብ፦ {item['ሁኔታ']}</small>
-                </div>
-            """, unsafe_allow_html=True)
-        with col_del:
-            st.write("") # Padding
-            if st.button("🗑️", key=f"del_{i}"):
-                st.session_state.cart.pop(i)
-                st.rerun()
+            st.markdown(f"""<div class='order-box'><b>{item['ዝርዝር']}</b><br><small>ሁኔታ፦ {item['ሁኔታ']}</small><br><b style='color:#E64A19;'>{item['ዋጋ']:.2f} ብር</b></div>""", unsafe_allow_html=True)
+        if col_del.button("❌", key=f"del_{i}"):
+            st.session_state.cart.pop(i)
+            st.rerun()
         total_bill += item['ዋጋ']
 
-    st.markdown(f"<h3 style='text-align:right; color:#E64A19;'>ጠቅላላ፦ {total_bill:.2f} ብር</h3>", unsafe_allow_html=True)
+    st.markdown(f"<h3 style='text-align:right;'>ጠቅላላ፦ {total_bill:.2f} ብር</h3>", unsafe_allow_html=True)
     
     if st.button("ትዕዛዝ አስተላልፍ 🚀"):
         if first_name and username_input:
@@ -180,28 +128,24 @@ if st.session_state.cart:
             st.balloons()
             st.rerun()
         else:
-            st.error("እባክዎ ስምዎን እና ቴሌግራም ዩዘርኔምዎን በትክክል ያስገቡ።")
+            st.warning("እባክዎ ስምዎን እና Username ያስገቡ።")
 
-# --- ዲጂታል ረሲት ---
+# --- የረሲት እይታ ---
 if st.session_state.receipt_data:
     st.divider()
     r = st.session_state.receipt_data
     st.markdown(f"""
     <div class='receipt-box'>
-        <h2 style='text-align:center; color:#E64A19; margin-top:0;'>እሙ ምግብ ቤት</h2>
-        <p style='text-align:center; font-size:12px; margin-bottom:10px;'>ዲጂታል ደረሰኝ</p>
-        <hr style='border-top: 1px dashed #bbb;'>
+        <h3 style='text-align:center;'>እሙ ምግብ ቤት - ረሲት</h3>
+        <hr>
         <p><b>ትዕዛዝ ቁጥር:</b> #{r['id']}</p>
         <p><b>ደንበኛ:</b> {r['name']}</p>
         <p><b>ቀን:</b> {r['time']}</p>
-        <hr style='border-top: 1px solid #eee;'>
-        {"".join([f"<div style='display:flex; justify-content:space-between;'><span>{i['ዝርዝር']}</span><b>{i['ዋጋ']:.2f} ETB</b></div>" for i in r['items']])}
-        <hr style='border-top: 2px solid #E64A19;'>
-        <div style='display:flex; justify-content:space-between; font-weight:bold; font-size:18px;'>
-            <span>ጠቅላላ:</span><span>{r['total']:.2f} ETB</span>
-        </div>
-        <br>
-        <p style='text-align:center; color:#7f8c8d; font-size:13px;'>ስለመረጡን እናመሰግናለን!<br>መልካም ምግብ!</p>
+        <hr>
+        {"".join([f"<p>{i['ዝርዝር']} - {i['ዋጋ']:.2f} ብር</p>" for i in r['items']])}
+        <hr>
+        <h4 style='text-align:right;'>ጠቅላላ: {r['total']:.2f} ብር</h4>
+        <p style='text-align:center; font-size:12px;'>ስለመረጡን እናመሰግናለን!</p>
     </div>
     """, unsafe_allow_html=True)
     
@@ -209,5 +153,4 @@ if st.session_state.receipt_data:
         st.session_state.receipt_data = None
         st.rerun()
 
-st.markdown("<br><br>", unsafe_allow_html=True)
-st.markdown(f"<p style='text-align:center; color:#bdc3c7; font-size:11px;'>Developed by <b>Belachew Damtie</b></p>", unsafe_allow_html=True)
+st.markdown(f"<p style='text-align:center; color:#718096; font-size:11px; margin-top:50px;'>Developer: <b>Belachew Damtie</b></p>", unsafe_allow_html=True)
