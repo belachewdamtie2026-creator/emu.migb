@@ -3,6 +3,8 @@ import pandas as pd
 import requests
 import qrcode
 from io import BytesIO
+from datetime import datetime
+import random
 
 # --- 1. ኮንፊገሬሽን ---
 BOT_TOKEN = "8779279617:AAEiHJY-R5rDJXpddYh54RhrLhVZxAOnTkI"
@@ -22,7 +24,16 @@ st.set_page_config(page_title="እሙ ምግብ ቤት", layout="centered", page
 st.markdown("""
 <style>
     .stApp { background-color: #fdfdfd; }
-    .main-header { text-align: center; color: #E64A19; font-weight: bold; }
+    .main-header { text-align: center; color: #E64A19; font-weight: bold; margin-bottom: 5px; }
+    .order-box {
+        background-color: white; padding: 15px; border-radius: 12px;
+        margin-bottom: 10px; border-left: 6px solid #E64A19;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+    }
+    .receipt-box {
+        border: 2px dashed #cbd5e0; padding: 20px; border-radius: 10px;
+        background-color: #fff; font-family: 'Courier New', monospace; line-height: 1.6;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -36,10 +47,13 @@ st.markdown("<h1 class='main-header'>🍳 እሙ ምግብ ቤት</h1>", unsafe_
 
 if 'cart' not in st.session_state:
     st.session_state.cart = []
+if 'receipt_data' not in st.session_state:
+    st.session_state.receipt_data = None
 
 col_a, col_b = st.columns(2)
 first_name = col_a.text_input("👤 ስም", placeholder="የመጀመሪያ ስም")
-username_input = col_b.text_input("💬 Telegram Username", placeholder="ያለ @ ምልክት")
+# እዚህ ጋር "ያለ @ ምልክት" የሚለውን አጥፍቼዋለሁ
+username_input = col_b.text_input("💬 Telegram Username", placeholder="Username ያስገቡ")
 
 st.divider()
 
@@ -69,34 +83,73 @@ if st.button("ወደ ቅርጫት ጨምር 🛒", use_container_width=True):
             for i in food_items_to_add:
                 st.session_state.cart.append({"ዝርዝር": f"{i['ምግብ']} (x{i['ብዛት']})", "ሁኔታ": "ለየብቻ", "ዋጋ": MENU[i['ምግብ']] * i['ብዛት']})
         st.toast("✅ ተጨምሯል")
+    else:
+        st.warning("እባክዎ መጀመሪያ ምግብ ይምረጡ")
 
+# --- የቅርጫት ዝርዝር እይታ ---
 if st.session_state.cart:
-    total_bill = sum(item['ዋጋ'] for item in st.session_state.cart)
-    summary = "\n".join([f"• {item['ዝርዝር']} [{item['ሁኔታ']}]" for item in st.session_state.cart])
+    st.markdown("### 🛒 የእርስዎ ቅርጫት")
+    total_bill = 0
+    for i, item in enumerate(st.session_state.cart):
+        col_item, col_del = st.columns([5, 1])
+        with col_item:
+            st.markdown(f"""<div class='order-box'><b>{item['ዝርዝር']}</b><br><small>ሁኔታ፦ {item['ሁኔታ']}</small><br><b style='color:#E64A19;'>{item['ዋጋ']:.2f} ብር</b></div>""", unsafe_allow_html=True)
+        if col_del.button("❌", key=f"del_{i}"):
+            st.session_state.cart.pop(i)
+            st.rerun()
+        total_bill += item['ዋጋ']
+
+    st.markdown(f"<h3 style='text-align:right;'>ጠቅላላ፦ {total_bill:.2f} ብር</h3>", unsafe_allow_html=True)
     
     if st.button("ትዕዛዝ አስተላልፍ 🚀", use_container_width=True):
         if first_name and username_input:
+            # ዩዘርኔሙን በራሱ የሚያስተካክል ሎጅክ (ጥንቃቄ)
             clean_username = username_input.replace("@", "").lower().strip()
+            order_id = random.randint(1000, 9999)
+            summary_text = "\n".join([f"• {item['ዝርዝር']} [{item['ሁኔታ']}]" for item in st.session_state.cart])
             
-            # ባለቤቱ ምላሽ ለመስጠት የሚጠቀምባቸው ሊንኮች
-            accept_link = f"https://t.me/{clean_username}?text=ሰላም {first_name}፣ ያዘዙት ምግብ አለ፤ እየተዘጋጀ ነው። ✅"
-            reject_link = f"https://t.me/{clean_username}?text=ይቅርታ {first_name}፣ ያዘዙት ምግብ ለጊዜው አልቋል። ❌"
+            accept_link = f"https://t.me/{clean_username}?text=ሰላም {first_name}፣ ትዕዛዝ #{order_id} ተቀብያለሁ። ✅"
+            reject_link = f"https://t.me/{clean_username}?text=ይቅርታ {first_name}፣ ለትዕዛዝ #{order_id} ያዘዙት ምግብ አልቋል። ❌"
             
             owner_msg = (
-                f"🔔 <b>አዲስ ትዕዛዝ</b>\n"
-                f"👤 ደንበኛ: {first_name}\n"
-                f"💬 Username: @{clean_username}\n\n"
-                f"📝 ዝርዝር:\n{summary}\n"
-                f"💰 ጠቅላላ: <b>{total_bill:.2f} ብር</b>\n\n"
-                f"<b>ምላሽ ለመስጠት፦</b>\n"
-                f"✅ <a href='{accept_link}'>አለ ለማለት</a>\n"
-                f"❌ <a href='{reject_link}'>የለም ለማለት</a>"
+                f"🔔 <b>አዲስ ትዕዛዝ #{order_id}</b>\n👤 ደንበኛ: {first_name}\n💬 Username: @{clean_username}\n"
+                f"📝 ዝርዝር:\n{summary_text}\n💰 ጠቅላላ: <b>{total_bill:.2f} ብር</b>\n\n"
+                f"✅ <a href='{accept_link}'>አለ ለማለት</a>\n❌ <a href='{reject_link}'>የለም ለማለት</a>"
             )
             
             send_to_owner(owner_msg)
-            st.success(f"ትዕዛዝዎ ተልኳል! ባለቤቱ በቴሌግራምዎ ያገኝዎታል።")
+            
+            st.session_state.receipt_data = {
+                "id": order_id, "name": first_name, "items": st.session_state.cart.copy(),
+                "total": total_bill, "time": datetime.now().strftime("%Y-%m-%d %H:%M")
+            }
             st.session_state.cart = []
+            st.balloons()
+            st.rerun()
         else:
-            st.warning("እባክዎ ስምዎን እና ዩዘርኔምዎን ያስገቡ።")
+            st.warning("እባክዎ ስምዎን እና Username ያስገቡ።")
+
+# --- የረሲት እይታ ---
+if st.session_state.receipt_data:
+    st.divider()
+    r = st.session_state.receipt_data
+    st.markdown(f"""
+    <div class='receipt-box'>
+        <h3 style='text-align:center;'>እሙ ምግብ ቤት - ረሲት</h3>
+        <hr>
+        <p><b>ትዕዛዝ ቁጥር:</b> #{r['id']}</p>
+        <p><b>ደንበኛ:</b> {r['name']}</p>
+        <p><b>ቀን:</b> {r['time']}</p>
+        <hr>
+        {"".join([f"<p>{i['ዝርዝር']} - {i['ዋጋ']:.2f} ብር</p>" for i in r['items']])}
+        <hr>
+        <h4 style='text-align:right;'>ጠቅላላ: {r['total']:.2f} ብር</h4>
+        <p style='text-align:center; font-size:12px;'>ስለመረጡን እናመሰግናለን!</p>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    if st.button("አዲስ ትዕዛዝ ጀምር"):
+        st.session_state.receipt_data = None
+        st.rerun()
 
 st.markdown(f"<p style='text-align:center; color:#718096; font-size:11px; margin-top:50px;'>Developer: <b>Belachew Damtie</b></p>", unsafe_allow_html=True)
