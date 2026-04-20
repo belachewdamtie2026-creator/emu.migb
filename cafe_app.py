@@ -4,18 +4,55 @@ from datetime import datetime
 import requests
 import qrcode
 from io import BytesIO
+import time
 
 # --- 1. ኮንፊገሬሽን (Telegram) ---
 BOT_TOKEN = "8779279617:AAEiHJY-R5rDJXpddYh54RhrLhVZxAOnTkI"
 CHAT_ID = "1066005872"
 
+# ትዕዛዞችን ለመከታተል (በጊዜያዊነት በsession state ይያዛል)
+if 'order_status' not in st.session_state:
+    st.session_state.order_status = "በመጠባበቅ ላይ..."
+
 def send_telegram_msg(message):
     url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
-    payload = {"chat_id": CHAT_ID, "text": message, "parse_mode": "HTML"}
+    
+    # በቴሌግራም ለባለቤቱ የሚመጡ ምርጫዎች (Buttons)
+    keyboard = {
+        "inline_keyboard": [[
+            {"text": "አለ (ተቀበል) ✅", "callback_data": "accept"},
+            {"text": "የለም (ሰርዝ) ❌", "callback_data": "reject"}
+        ]]
+    }
+    
+    payload = {
+        "chat_id": CHAT_ID, 
+        "text": message, 
+        "parse_mode": "HTML",
+        "reply_markup": keyboard
+    }
     try:
-        requests.post(url, data=payload, timeout=5)
+        requests.post(url, json=payload, timeout=5)
     except:
         pass
+
+# የባለቤቱን ምላሽ ለመፈተሽ (Poll)
+def check_for_response():
+    url = f"https://api.telegram.org/bot{BOT_TOKEN}/getUpdates"
+    try:
+        response = requests.get(url, timeout=5).json()
+        if response["result"]:
+            # የመጨረሻውን የባለቤት ምላሽ መፈለግ
+            for update in reversed(response["result"]):
+                if "callback_query" in update:
+                    res = update["callback_query"]["data"]
+                    if res == "accept":
+                        return "ትዕዛዝዎ ተቀባይነት አግኝቷል! በቅርቡ ይደርሳል። ✅"
+                    elif res == "reject":
+                        return "ይቅርታ፣ ያዘዙት ምግብ ለጊዜው አልቋል። ❌"
+    except:
+        pass
+    return None
 
 # --- 2. ገጽ ዝግጅት ---
 st.set_page_config(page_title="እሙ ምግብ ቤት", layout="centered", page_icon="🍳")
@@ -23,14 +60,16 @@ st.set_page_config(page_title="እሙ ምግብ ቤት", layout="centered", page
 st.markdown("""
 <style>
     .stApp { background-color: #fdfdfd; }
-    .main-header { text-align: center; color: #E64A19; font-weight: bold; margin-bottom: 0px; }
-    .sub-header { text-align: center; color: #757575; font-size: 14px; margin-bottom: 20px; }
+    .main-header { text-align: center; color: #E64A19; font-weight: bold; }
     .order-box {
         background-color: white; padding: 15px; border-radius: 12px;
         margin-bottom: 10px; border-left: 6px solid #E64A19;
         box-shadow: 0 4px 10px rgba(0,0,0,0.05);
     }
-    .stRadio > div { flex-direction: row !important; gap: 20px; justify-content: center; }
+    .status-card {
+        background-color: #fff3e0; padding: 15px; border-radius: 10px;
+        text-align: center; border: 1px solid #ffb74d; margin-top: 20px;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -50,10 +89,11 @@ st.sidebar.image(buf.getvalue(), caption="በስልክዎ ስካን አድርገ
 
 # --- ዋናው ክፍል ---
 st.markdown("<h1 class='main-header'>🍳 እሙ ምግብ ቤት</h1>", unsafe_allow_html=True)
-st.markdown("<p class='sub-header'>ትዕዛዝዎን ያስገቡ፤ በቀጥታ ወደ እኛ ይደርሳል!</p>", unsafe_allow_html=True)
 
 if 'cart' not in st.session_state:
     st.session_state.cart = []
+if 'last_order_sent' not in st.session_state:
+    st.session_state.last_order_sent = False
 
 col_a, col_b = st.columns(2)
 first_name = col_a.text_input("👤 ስም", placeholder="የመጀመሪያ ስም")
@@ -61,83 +101,63 @@ c_tele = col_b.text_input("💬 ስልክ/ቴሌግራም", placeholder="09...")
 
 st.divider()
 
-# 1. የአቀራረብ ሁኔታ ምርጫ (ይህ መጀመሪያ እንዲታይ ተደርጓል)
 packing_style = st.radio("**የአቀራረብ ሁኔታ ይምረጡ**", ["ለየብቻ", "በአንድ እቃ"], horizontal=True)
 
 food_items_to_add = []
-
 if packing_style == "በአንድ እቃ":
-    # ብዙ እንዲመርጥ መፍቀድ
     selected_foods = st.multiselect("በአንድ እቃ የሚቀላቀሉ ምግቦችን ይምረጡ", list(MENU.keys()))
     if selected_foods:
-        st.info("ለእያንዳንዱ ምግብ መጠን ያስገቡ")
         for f in selected_foods:
             c1, c2 = st.columns([3, 1])
             with c1: st.write(f"**{f}**")
             qty = c2.number_input("ብዛት", 1, 10, 1, key=f"mixed_{f}", label_visibility="collapsed")
             food_items_to_add.append({"ምግብ": f, "ብዛት": qty})
 else:
-    # አንድ ብቻ እንዲመርጥ መፍቀድ
     f = st.selectbox("የሚፈልጉትን ምግብ ይምረጡ", list(MENU.keys()))
     qty = st.number_input("ብዛት", 1, 20, 1)
     food_items_to_add.append({"ምግብ": f, "ብዛት": qty})
 
-# ወደ ቅርጫት መጨመሪያ ቁልፍ
 if st.button("ወደ ቅርጫት ጨምር 🛒", use_container_width=True):
     if food_items_to_add:
         if packing_style == "በአንድ እቃ":
-            # እንደ አንድ ጥቅል መያዝ
-            details = ", ".join([f"{i['ምግብ']} (x{i['ብዛት']})" for i in food_items_to_add])
+            details = ", ".join([f"{i['ምግብ']} (x{i['q']})" for i in food_items_to_add])
             price = sum([MENU[i['ምግብ']] * i['ብዛት'] for i in food_items_to_add])
             st.session_state.cart.append({"ዝርዝር": details, "ሁኔታ": "በአንድ እቃ", "ዋጋ": price})
         else:
-            # ለየብቻ መያዝ
             for i in food_items_to_add:
-                st.session_state.cart.append({
-                    "ዝርዝር": f"{i['ምግብ']} (x{i['ብዛት']})",
-                    "ሁኔታ": "ለየብቻ",
-                    "ዋጋ": MENU[i['ምግብ']] * i['ብዛት']
-                })
+                st.session_state.cart.append({"ዝርዝር": f"{i['ምግብ']} (x{i['ብዛት']})", "ሁኔታ": "ለየብቻ", "ዋጋ": MENU[i['ምግብ']] * i['ብዛት']})
         st.toast("✅ ተጨምሯል")
     else:
         st.warning("እባክዎ መጀመሪያ ምግብ ይምረጡ")
 
-# የቅርጫት እይታ
 if st.session_state.cart:
-    st.markdown("---")
-    display_title = f"🛒 የ{first_name} ምርጫዎች" if first_name else "🛒 የያዙት ምግቦች"
-    st.markdown(f"### {display_title}")
+    st.divider()
+    total_bill = sum(item['ዋጋ'] for item in st.session_state.cart)
+    summary = "\n".join([f"• {item['ዝርዝር']} [{item['ሁኔታ']}]" for item in st.session_state.cart])
     
-    total_bill = 0
-    summary = ""
-    
-    for i, item in enumerate(st.session_state.cart):
-        with st.container():
-            col_item, col_del = st.columns([4, 1])
-            col_item.markdown(f"""
-                <div class='order-box'>
-                    <span style='font-size: 15px;'><b>{item['ዝርዝር']}</b></span><br>
-                    <small style='color: #757575;'>ሁኔታ፦ {item['ሁኔታ']}</small>
-                    <span style='float: right; color: #E64A19; font-weight: bold;'>{item['ዋጋ']:.2f} ብር</span>
-                </div>
-            """, unsafe_allow_html=True)
-            if col_del.button("❌", key=f"del_{i}"):
-                st.session_state.cart.pop(i)
-                st.rerun()
-        
-        total_bill += item['ዋጋ']
-        summary += f"• {item['ዝርዝር']} [{item['ሁኔታ']}] - {item['ዋጋ']} ብር\n"
-    
-    st.markdown(f"<h2 style='text-align:right; color:#E64A19;'>ጠቅላላ: {total_bill:.2f} ብር</h2>", unsafe_allow_html=True)
+    st.markdown(f"### ጠቅላላ: {total_bill:.2f} ብር")
     
     if st.button("ትዕዛዝ አስተላልፍ 🚀", use_container_width=True):
         if first_name:
-            msg = f"🔔 <b>አዲስ ትዕዛዝ</b>\n\n👤 <b>ደንበኛ:</b> {first_name}\n📞 <b>ስልክ:</b> {c_tele}\n\n📝 <b>ዝርዝር:</b>\n{summary}\n💰 <b>ጠቅላላ: {total_bill} ብር</b>"
+            msg = f"🔔 <b>አዲስ ትዕዛዝ</b>\n👤 ደንበኛ: {first_name}\n📞 ስልክ: {c_tele}\n📝 ዝርዝር:\n{summary}\n💰 ጠቅላላ: {total_bill} ብር"
             send_telegram_msg(msg)
-            st.success(f"እናመሰግናለን {first_name}! ትዕዛዝዎ ተልኳል።")
-            st.session_state.cart = []
-            st.balloons()
+            st.session_state.last_order_sent = True
+            st.session_state.order_status = "የምግብ ቤቱን ምላሽ በመጠባበቅ ላይ... ⏳"
+            st.success("ትዕዛዝዎ ተልኳል! እባክዎ ምላሽ እስኪመጣ ድረስ ገጹን አይዝጉት።")
         else:
             st.warning("እባክዎ ስምዎን ያስገቡ")
 
-st.markdown(f"<p style='text-align:center; color:#718096; font-size:11px; margin-top:50px;'>Developed by <b>Belachew Damtie</b></p>", unsafe_allow_html=True)
+# --- የሁኔታ መከታተያ (Status Checker) ---
+if st.session_state.last_order_sent:
+    st.markdown(f"""<div class='status-card'><h3>የትዕዛዝ ሁኔታ</h3><p>{st.session_state.order_status}</p></div>""", unsafe_allow_html=True)
+    
+    # ምላሽ እስኪመጣ በየጥቂት ሰከንዱ ይፈትሻል
+    if "ተቀባይነት" not in st.session_state.order_status and "ይቅርታ" not in st.session_state.order_status:
+        with st.spinner("ምላሽ በመጠበቅ ላይ..."):
+            new_status = check_for_response()
+            if new_status:
+                st.session_state.order_status = new_status
+                st.rerun()
+            time.sleep(2) # ለ 2 ሰከንድ መጠበቅ
+
+st.markdown(f"<p style='text-align:center; color:#718096; font-size:11px; margin-top:50px;'>Developer: <b>Belachew Damtie</b></p>", unsafe_allow_html=True)
