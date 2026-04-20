@@ -31,9 +31,7 @@ st.markdown("""
         box-shadow: 0 4px 10px rgba(0,0,0,0.05);
         display: flex; justify-content: space-between; align-items: center;
     }
-    div.stButton > button {
-        border-radius: 8px !important;
-    }
+    .qty-row { background: #fff5f2; padding: 10px; border-radius: 8px; margin-bottom: 5px; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -64,18 +62,39 @@ c_tele = col_b.text_input("💬 ስልክ/ቴሌግራም", placeholder="09...")
 
 st.divider()
 
-# ከአንድ በላይ ምግብ መምረጥ እንዲቻል multiselect ተደርጓል
-selected_foods = st.multiselect("ምግቦችን ይምረጡ (ከአንድ በላይ መምረጥ ይችላሉ)", list(MENU.keys()))
-qty = st.number_input("የእያንዳንዱ ብዛት", 1, 20, 1)
+# 1. ምግቦችን መምረጥ
+selected_foods = st.multiselect("ምግቦችን ይምረጡ", list(MENU.keys()))
+
+# 2. ለእያንዳንዱ የተመረጠ ምግብ መጠንና ማሸጊያ መምረጥ
+food_details = {}
+if selected_foods:
+    st.markdown("##### የእያንዳንዱን መጠን ያስተካክሉ")
+    for f in selected_foods:
+        c1, c2 = st.columns([2, 1])
+        with c1: st.write(f"**{f}**")
+        with c2: food_details[f] = st.number_input(f"ብዛት", 1, 20, 1, key=f"qty_{f}", label_visibility="collapsed")
+    
+    packing_style = st.radio("የአቀራረብ ሁኔታ", ["በአንድ እቃ", "ለየብቻ"], horizontal=True)
 
 if st.button("ወደ ቅርጫት ጨምር 🛒", use_container_width=True):
     if selected_foods:
-        for f in selected_foods:
-            st.session_state.cart.append({"ምግብ": f, "ብዛት": qty, "ዋጋ": MENU[f]*qty})
-        st.toast(f"✅ {len(selected_foods)} አይነት ምግቦች ተጨምረዋል")
+        # ሁሉንም እንደ አንድ ትዕዛዝ (Bundle) መያዝ
+        items_list = []
+        sub_total = 0
+        for f, q in food_details.items():
+            items_list.append(f"{f} (x{q})")
+            sub_total += MENU[f] * q
+        
+        st.session_state.cart.append({
+            "ዝርዝር": ", ".join(items_list),
+            "ሁኔታ": packing_style,
+            "ዋጋ": sub_total
+        })
+        st.toast("✅ ትዕዛዙ ተጨምሯል")
     else:
         st.warning("እባክዎ መጀመሪያ ምግብ ይምረጡ")
 
+# የቅርጫት እይታ
 if st.session_state.cart:
     st.markdown("---")
     display_title = f"🛒 የ{first_name} ምርጫዎች" if first_name else "🛒 የያዙት ምግቦች"
@@ -89,7 +108,7 @@ if st.session_state.cart:
             col_item, col_del = st.columns([4, 1])
             col_item.markdown(f"""
                 <div class='order-box'>
-                    <span><b>{item['ምግብ']}</b> (x{item['ብዛት']})</span>
+                    <span><b>{item['ዝርዝር']}</b><br><small>የአቀራረብ ሁኔታ፦ {item['ሁኔታ']}</small></span>
                     <span style='color: #E64A19; font-weight: bold;'>{item['ዋጋ']:.2f} ብር</span>
                 </div>
             """, unsafe_allow_html=True)
@@ -98,7 +117,7 @@ if st.session_state.cart:
                 st.rerun()
         
         total_bill += item['ዋጋ']
-        summary += f"• {item['ምግብ']} (x{item['ብዛት']}) - {item['ዋጋ']} ብር\n"
+        summary += f"• {item['ዝርዝር']} [{item['ሁኔታ']}] - {item['ዋጋ']} ብር\n"
     
     st.markdown(f"<h2 style='text-align:right; color:#E64A19;'>ጠቅላላ: {total_bill:.2f} ብር</h2>", unsafe_allow_html=True)
     
