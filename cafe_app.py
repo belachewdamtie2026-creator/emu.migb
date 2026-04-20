@@ -5,6 +5,7 @@ import qrcode
 from io import BytesIO
 from datetime import datetime
 import random
+import urllib.parse  # መልዕክቱ እንዳይቆራረጥ የሚያደርግ
 
 # --- 1. ኮንፊገሬሽን ---
 BOT_TOKEN = "8779279617:AAEiHJY-R5rDJXpddYh54RhrLhVZxAOnTkI"
@@ -110,13 +111,22 @@ if st.session_state.cart:
             order_id = random.randint(1000, 9999)
             summary_text = "\n".join([f"• {item['ዝርዝር']} [{item['ሁኔታ']}]" for item in st.session_state.cart])
             
-            accept_link = f"https://t.me/{clean_username}?text=ሰላም {first_name}፣ ትዕዛዝ #{order_id} ተቀብያለሁ። ✅"
-            reject_link = f"https://t.me/{clean_username}?text=ይቅርታ {first_name}፣ ለትዕዛዝ #{order_id} ያዘዙት ምግብ አልቋል። ❌"
+            # ክፍት ቦታዎች እና አማርኛ ፊደላት እንዳይቆራረጡ encode ይደረጋሉ
+            accept_text = urllib.parse.quote(f"ሰላም {first_name}፣ ትዕዛዝ #{order_id} ተቀብያለሁ፤ እየተዘጋጀ ነው። ✅")
+            reject_text = urllib.parse.quote(f"ይቅርታ {first_name}፣ ለትዕዛዝ #{order_id} ያዘዙት ምግብ ለጊዜው አልቋል። ❌")
+            
+            accept_link = f"https://t.me/{clean_username}?text={accept_text}"
+            reject_link = f"https://t.me/{clean_username}?text={reject_text}"
             
             owner_msg = (
-                f"🔔 <b>አዲስ ትዕዛዝ #{order_id}</b>\n👤 ደንበኛ: {first_name}\n💬 Username: @{clean_username}\n"
-                f"📝 ዝርዝር:\n{summary_text}\n💰 ጠቅላላ: <b>{total_bill:.2f} ብር</b>\n\n"
-                f"✅ <a href='{accept_link}'>አለ ለማለት</a>\n❌ <a href='{reject_link}'>የለም ለማለት</a>"
+                f"🔔 <b>አዲስ ትዕዛዝ #{order_id}</b>\n"
+                f"👤 ደንበኛ: {first_name}\n"
+                f"💬 Username: @{clean_username}\n\n"
+                f"📝 ዝርዝር:\n{summary_text}\n"
+                f"💰 ጠቅላላ: <b>{total_bill:.2f} ብር</b>\n\n"
+                f"<b>ምላሽ ለመስጠት፦</b>\n"
+                f"✅ <a href='{accept_link}'>አለ ለማለት</a>\n"
+                f"❌ <a href='{reject_link}'>የለም ለማለት</a>"
             )
             
             send_to_owner(owner_msg)
