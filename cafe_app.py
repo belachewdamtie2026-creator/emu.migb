@@ -61,12 +61,13 @@ c_tele = col_b.text_input("💬 ስልክ/ቴሌግራም", placeholder="09...")
 
 st.divider()
 
-# 1. የአቀራረብ ሁኔታ ምርጫ
+# 1. የአቀራረብ ሁኔታ ምርጫ (ይህ መጀመሪያ እንዲታይ ተደርጓል)
 packing_style = st.radio("**የአቀራረብ ሁኔታ ይምረጡ**", ["ለየብቻ", "በአንድ እቃ"], horizontal=True)
 
 food_items_to_add = []
 
 if packing_style == "በአንድ እቃ":
+    # ብዙ እንዲመርጥ መፍቀድ
     selected_foods = st.multiselect("በአንድ እቃ የሚቀላቀሉ ምግቦችን ይምረጡ", list(MENU.keys()))
     if selected_foods:
         st.info("ለእያንዳንዱ ምግብ መጠን ያስገቡ")
@@ -76,17 +77,21 @@ if packing_style == "በአንድ እቃ":
             qty = c2.number_input("ብዛት", 1, 10, 1, key=f"mixed_{f}", label_visibility="collapsed")
             food_items_to_add.append({"ምግብ": f, "ብዛት": qty})
 else:
+    # አንድ ብቻ እንዲመርጥ መፍቀድ
     f = st.selectbox("የሚፈልጉትን ምግብ ይምረጡ", list(MENU.keys()))
     qty = st.number_input("ብዛት", 1, 20, 1)
     food_items_to_add.append({"ምግብ": f, "ብዛት": qty})
 
+# ወደ ቅርጫት መጨመሪያ ቁልፍ
 if st.button("ወደ ቅርጫት ጨምር 🛒", use_container_width=True):
     if food_items_to_add:
         if packing_style == "በአንድ እቃ":
+            # እንደ አንድ ጥቅል መያዝ
             details = ", ".join([f"{i['ምግብ']} (x{i['ብዛት']})" for i in food_items_to_add])
             price = sum([MENU[i['ምግብ']] * i['ብዛት'] for i in food_items_to_add])
             st.session_state.cart.append({"ዝርዝር": details, "ሁኔታ": "በአንድ እቃ", "ዋጋ": price})
         else:
+            # ለየብቻ መያዝ
             for i in food_items_to_add:
                 st.session_state.cart.append({
                     "ዝርዝር": f"{i['ምግብ']} (x{i['ብዛት']})",
@@ -135,5 +140,4 @@ if st.session_state.cart:
         else:
             st.warning("እባክዎ ስምዎን ያስገቡ")
 
-# የተስተካከለው ፉተር
-st.markdown(f"<p style='text-align:center; color:#718096; font-size:11px; margin-top:50px;'>Developer: <b>Belachew Damtie</b></p>", unsafe_allow_html=True)
+st.markdown(f"<p style='text-align:center; color:#718096; font-size:11px; margin-top:50px;'>Developed by <b>Belachew Damtie</b></p>", unsafe_allow_html=True)
