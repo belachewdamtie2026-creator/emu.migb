@@ -18,92 +18,98 @@ def send_to_owner(message):
     except:
         pass
 
-# --- 2. ፕሪሚየም UI (Advanced CSS) ---
-st.set_page_config(page_title="እሙ ምግብ ቤት", layout="centered", page_icon="🍳")
+# --- 2. ፕሪሚየም UI (Superior Visual Design) ---
+st.set_page_config(page_title="እሙ ምግብ ቤት | Emu Restaurant", layout="centered", page_icon="🍳")
 
 st.markdown("""
 <style>
-    /* አጠቃላይ የጀርባ ቀለም */
+    /* አጠቃላይ የጀርባ እና የፎንት ሁኔታ */
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;800&display=swap');
+    
     .stApp {
-        background: linear-gradient(135deg, #FFF5F0 0%, #FFEDD5 100%);
+        background: linear-gradient(160deg, #FFF9F5 0%, #FFE4D6 100%);
+        font-family: 'Poppins', sans-serif;
     }
 
     /* የርዕስ ክፍል አኒሜሽን */
-    @keyframes fadeInDown {
-        from { opacity: 0; transform: translateY(-20px); }
+    @keyframes slideUpFade {
+        from { opacity: 0; transform: translateY(30px); }
         to { opacity: 1; transform: translateY(0); }
     }
 
     .main-header {
         text-align: center;
-        background: linear-gradient(90deg, #E64A19, #F57C00);
+        background: linear-gradient(90deg, #D35400, #F39C12);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
-        font-size: 3.5rem;
-        font-weight: 900;
-        margin-bottom: 5px;
-        animation: fadeInDown 1s ease-out;
+        font-size: 4rem;
+        font-weight: 800;
+        margin-bottom: 0px;
+        animation: slideUpFade 0.8s ease-out;
     }
 
     .sub-header {
         text-align: center;
-        color: #5D4037;
-        font-style: italic;
-        margin-bottom: 30px;
+        color: #8D6E63;
+        font-size: 1.2rem;
+        letter-spacing: 1px;
+        margin-bottom: 40px;
+        animation: slideUpFade 1s ease-out;
     }
 
-    /* የምግብ ካርዶች (Glassmorphism) */
+    /* የምግብ ካርዶች (Elegant Design) */
     .order-box {
-        background: rgba(255, 255, 255, 0.7);
-        backdrop-filter: blur(10px);
-        padding: 20px;
-        border-radius: 20px;
-        margin-bottom: 15px;
-        border: 1px solid rgba(255, 255, 255, 0.5);
-        box-shadow: 0 8px 32px rgba(230, 74, 25, 0.1);
-        transition: transform 0.3s ease;
+        background: #ffffff;
+        padding: 25px;
+        border-radius: 24px;
+        margin-bottom: 18px;
+        border: none;
+        box-shadow: 0 10px 25px rgba(211, 84, 0, 0.08);
+        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     }
     
     .order-box:hover {
-        transform: scale(1.02);
-        border-left: 10px solid #E64A19;
+        transform: translateY(-8px);
+        box-shadow: 0 15px 35px rgba(211, 84, 0, 0.15);
+        border-left: 12px solid #D35400;
     }
 
     /* የረሲት ስታይል */
     .receipt-box {
-        background: white;
-        padding: 30px;
-        border-radius: 5px;
-        box-shadow: 0 0 20px rgba(0,0,0,0.1);
-        border-top: 10px solid #E64A19;
+        background: #fff;
+        padding: 35px;
+        border-radius: 4px;
+        box-shadow: 0 0 30px rgba(0,0,0,0.05);
+        border-top: 12px solid #D35400;
         font-family: 'Courier New', Courier, monospace;
         position: relative;
-    }
-    .receipt-box::after {
-        content: "";
-        position: absolute;
-        bottom: 0; left: 0; right: 0;
-        height: 10px;
-        background: linear-gradient(-45deg, transparent 5px, white 5px), linear-gradient(45deg, transparent 5px, white 5px);
-        background-size: 10px 10px;
     }
 
     /* Button Styling */
     div.stButton > button {
-        background: linear-gradient(90deg, #E64A19, #FF7043);
+        background: linear-gradient(90deg, #D35400, #E67E22);
         color: white;
         border: none;
-        padding: 12px 20px;
-        border-radius: 50px;
-        font-weight: bold;
+        padding: 18px 25px;
+        border-radius: 16px;
+        font-weight: 600;
+        font-size: 1.1rem;
         width: 100%;
-        transition: 0.3s;
-        box-shadow: 0 4px 15px rgba(230, 74, 25, 0.3);
+        transition: 0.4s;
+        box-shadow: 0 8px 20px rgba(211, 84, 0, 0.25);
     }
     div.stButton > button:hover {
-        background: linear-gradient(90deg, #BF360C, #E64A19);
-        box-shadow: 0 6px 20px rgba(230, 74, 25, 0.5);
-        transform: translateY(-2px);
+        background: linear-gradient(90deg, #A04000, #D35400);
+        box-shadow: 0 12px 25px rgba(211, 84, 0, 0.4);
+        transform: scale(1.02);
+        color: #fff;
+    }
+    
+    /* Input Fields Design */
+    .stTextInput>div>div>input {
+        border-radius: 12px;
+        border: 2px solid #FFE0D1;
+        padding: 10px;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -116,7 +122,7 @@ MENU = {
 }
 
 st.markdown("<h1 class='main-header'>🍳 እሙ ምግብ ቤት</h1>", unsafe_allow_html=True)
-st.markdown("<p class='sub-header'>በቤትዎ ሆነው ይዘዙ!</p>", unsafe_allow_html=True)
+st.markdown("<p class='sub-header'>ቅምሻዎ በደጃፍዎ! • Fresh & Fast</p>", unsafe_allow_html=True)
 
 if 'cart' not in st.session_state:
     st.session_state.cart = []
@@ -124,18 +130,18 @@ if 'receipt_data' not in st.session_state:
     st.session_state.receipt_data = None
 
 # --- 4. የደንበኛ መረጃ ---
-with st.expander("👤 የደንበኛ መረጃ መሙያ", expanded=True):
+with st.container():
     col_a, col_b = st.columns(2)
     with col_a:
-        first_name = st.text_input("የእርስዎ ስም")
+        first_name = st.text_input("👤 ስምዎን ያስገቡ", placeholder="ለምሳሌ፡ አበበ")
     with col_b:
-        username_input = st.text_input("Telegram Username", placeholder="@username")
+        username_input = st.text_input("💬 ቴሌግራም", placeholder="@username")
 
-st.write("") # Space
+st.markdown("---")
 
 # --- 5. ምግብ መምረጫ ---
-st.markdown("### 🍽️ ትዕዛዝዎን ይምረጡ")
-packing_style = st.radio("**የአቀራረብ ሁኔታ**", ["ለየብቻ", "በአንድ እቃ"], horizontal=True)
+st.markdown("### 🍽️ ምግቦች")
+packing_style = st.radio("**አቀራረብ**", ["ለየብቻ", "በአንድ እቃ"], horizontal=True)
 
 food_items_to_add = []
 if packing_style == "በአንድ እቃ":
@@ -143,7 +149,7 @@ if packing_style == "በአንድ እቃ":
     if selected_foods:
         for f in selected_foods:
             c1, c2 = st.columns([3, 1])
-            with c1: st.write(f"🔸 **{f}**")
+            with c1: st.write(f"✨ **{f}**")
             qty = c2.number_input("ብዛት", 1, 10, 1, key=f"mixed_{f}")
             food_items_to_add.append({"ምግብ": f, "ብዛት": qty})
 else:
@@ -151,6 +157,7 @@ else:
     qty = st.number_input("ብዛት", 1, 20, 1)
     food_items_to_add.append({"ምግብ": f, "ብዛት": qty})
 
+st.write("")
 if st.button("ወደ ቅርጫት ጨምር 🛒"):
     if food_items_to_add:
         if packing_style == "በአንድ እቃ":
@@ -160,14 +167,14 @@ if st.button("ወደ ቅርጫት ጨምር 🛒"):
         else:
             for i in food_items_to_add:
                 st.session_state.cart.append({"ዝርዝር": f"{i['ምግብ']} (x{i['ብዛት']})", "ሁኔታ": "ለየብቻ", "ዋጋ": MENU[i['ምግብ']] * i['ብዛት']})
-        st.toast("✅ ተጨምሯል!")
+        st.toast("✅ በተሳካ ሁኔታ ተጨምሯል!")
     else:
         st.warning("እባክዎ መጀመሪያ ምግብ ይምረጡ")
 
 # --- 6. የቅርጫት ዝርዝር ---
 if st.session_state.cart:
     st.markdown("---")
-    st.markdown("### 🛒 የእርስዎ ቅርጫት")
+    st.markdown("### 🛒 ያዘዟቸው ምግቦች")
     total_bill = 0
     for i, item in enumerate(st.session_state.cart):
         col_item, col_del = st.columns([5, 1])
@@ -175,20 +182,21 @@ if st.session_state.cart:
             st.markdown(f"""
             <div class='order-box'>
                 <div style='display:flex; justify-content:space-between; align-items:center;'>
-                    <div><b>{item['ዝርዝር']}</b><br><small>📦 {item['ሁኔታ']}</small></div>
-                    <div style='color:#E64A19; font-weight:bold;'>{item['ዋጋ']:.2f} ብር</div>
+                    <div><b style='font-size:1.2rem; color:#4E342E;'>{item['ዝርዝር']}</b><br>
+                    <span style='color:#A1887F;'>📦 አቀራረብ፦ {item['ሁኔታ']}</span></div>
+                    <div style='color:#D35400; font-weight:800; font-size:1.3rem;'>{item['ዋጋ']:.2f} ብር</div>
                 </div>
             </div>""", unsafe_allow_html=True)
         with col_del:
-            st.write("")
-            if st.button("❌", key=f"del_{i}"):
+            st.write(" ")
+            if st.button("🗑️", key=f"del_{i}"):
                 st.session_state.cart.pop(i)
                 st.rerun()
         total_bill += item['ዋጋ']
 
-    st.markdown(f"<h2 style='text-align:right; color:#E64A19;'>ጠቅላላ፦ {total_bill:.2f} ብር</h2>", unsafe_allow_html=True)
+    st.markdown(f"<h2 style='text-align:right; color:#D35400; padding-top:20px;'>ጠቅላላ፦ {total_bill:.2f} ብር</h2>", unsafe_allow_html=True)
     
-    if st.button("ትዕዛዝ አስተላልፍ 🚀"):
+    if st.button("ትዕዛዝ አስተላልፍ (Order Now) 🚀"):
         if first_name and username_input:
             clean_username = username_input.replace("@", "").lower().strip()
             order_id = random.randint(1000, 9999)
@@ -220,7 +228,7 @@ if st.session_state.cart:
             st.balloons()
             st.rerun()
         else:
-            st.warning("እባክዎ ስምዎን እና Username ያስገቡ።")
+            st.warning("እባክዎ ስምዎን እና ቴሌግራምዎን ያስገቡ።")
 
 # --- 7. የረሲት እይታ ---
 if st.session_state.receipt_data:
@@ -228,22 +236,23 @@ if st.session_state.receipt_data:
     r = st.session_state.receipt_data
     st.markdown(f"""
     <div class='receipt-box'>
-        <h3 style='text-align:center;'>እሙ ምግብ ቤት - ረሲት</h3>
-        <p style='text-align:center; font-size:10px;'>ቀን: {r['time']}</p>
-        <hr style='border: 1px dashed #eee;'>
-        <p><b>ትዕዛዝ ቁጥር:</b> #{r['id']}</p>
-        <p><b>ደንበኛ:</b> {r['name']}</p>
-        <hr style='border: 1px dashed #eee;'>
-        {"".join([f"<div style='display:flex; justify-content:space-between; font-size:13px;'><span>{i['ዝርዝር']}</span><span>{i['ዋጋ']:.2f}</span></div>" for i in r['items']])}
-        <hr style='border: 1px dashed #eee;'>
-        <h4 style='text-align:right;'>ጠቅላላ: {r['total']:.2f} ብር</h4>
-        <p style='text-align:center; font-size:12px; margin-top:20px;'>ስለመረጡን እናመሰግናለን!</p>
+        <h2 style='text-align:center; color:#333;'>EMU RESTAURANT</h2>
+        <p style='text-align:center; font-size:12px; color:#777;'>ቀን: {r['time']}</p>
+        <div style='border-top: 2px dashed #DDD; margin: 20px 0;'></div>
+        <p><b>RECEIPT ID:</b> #{r['id']}</p>
+        <p><b>CUSTOMER:</b> {r['name']}</p>
+        <div style='border-top: 1px solid #EEE; margin: 15px 0;'></div>
+        {"".join([f"<div style='display:flex; justify-content:space-between; margin-bottom:8px;'><span>{i['ዝርዝር']}</span><b>{i['ዋጋ']:.2f}</b></div>" for i in r['items']])}
+        <div style='border-top: 2px dashed #DDD; margin: 20px 0;'></div>
+        <h3 style='text-align:right; color:#D35400;'>TOTAL: {r['total']:.2f} ETB</h3>
+        <p style='text-align:center; font-size:14px; margin-top:30px; color:#888;'>በመረጡን እናመሰግናለን!</p>
     </div>
     """, unsafe_allow_html=True)
     
-    if st.button("አዲስ ትዕዛዝ ጀምር"):
+    st.write("")
+    if st.button("ተጨማሪ እዘዝ ✨"):
         st.session_state.receipt_data = None
         st.rerun()
 
 # --- Footer ---
-st.markdown(f"<div style='margin-top:50px; text-align:center; opacity:0.6; font-size:12px;'>Developer: Belachew Damtie | 2024</div>", unsafe_allow_html=True)
+st.markdown(f"<div style='margin-top:60px; text-align:center; opacity:0.5; font-size:13px; color:#5D4037;'>Crafted for Emu Restaurant by <b>Belachew Damtie</b> | 2026</div>", unsafe_allow_html=True)
