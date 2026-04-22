@@ -162,7 +162,7 @@ if st.button("ወደ ቅርጫት ጨምር 🛒"):
     if food_items_to_add:
         if packing_style == "በአንድ እቃ":
             details = ", ".join([f"{i['ምግብ']} (x{i['ብዛት']})" for i in food_items_to_add])
-            price = sum([MENU[i['ምግብ']] * i['бዛት'] for i in food_items_to_add])
+            price = sum([MENU[i['ምግብ']] * i['ብዛት'] for i in food_items_to_add])
             st.session_state.cart.append({"ዝርዝር": details, "ሁኔታ": "በአንድ እቃ", "ዋጋ": price})
         else:
             for i in food_items_to_add:
