@@ -236,7 +236,7 @@ if st.session_state.receipt_data:
     r = st.session_state.receipt_data
     st.markdown(f"""
     <div class='receipt-box'>
-        <h2 style='text-align:center; color:#333;'>EMU RESTAURANT</h2>
+        <h2 style='text-align:center; color:#333;'>እሙ ምግብ ቤት</h2>
         <p style='text-align:center; font-size:12px; color:#777;'>ቀን: {r['time']}</p>
         <div style='border-top: 2px dashed #DDD; margin: 20px 0;'></div>
         <p><b>RECEIPT ID:</b> #{r['id']}</p>
@@ -255,4 +255,4 @@ if st.session_state.receipt_data:
         st.rerun()
 
 # --- Footer ---
-st.markdown(f"<div style='margin-top:60px; text-align:center; opacity:0.5; font-size:13px; color:#5D4037;'>Crafted for Emu Restaurant by <b>Belachew Damtie</b> | 2026</div>", unsafe_allow_html=True)
+st.markdown(f"<div style='margin-top:60px; text-align:center; opacity:0.5; font-size:13px; color:#5D4037;'>Developer: <b>Belachew Damtie</b> | 2026</div>", unsafe_allow_html=True)
