@@ -122,7 +122,7 @@ MENU = {
 }
 
 st.markdown("<h1 class='main-header'>🍳 እሙ ምግብ ቤት</h1>", unsafe_allow_html=True)
-st.markdown("<p class='sub-header'>ቅምሻዎ በደጃፍዎ! • Fresh & Fast</p>", unsafe_allow_html=True)
+st.markdown("<p class='sub-header'>በቤትዎ ሆነው ይዘዙ! • Fresh & Fast</p>", unsafe_allow_html=True)
 
 if 'cart' not in st.session_state:
     st.session_state.cart = []
@@ -133,7 +133,7 @@ if 'receipt_data' not in st.session_state:
 with st.container():
     col_a, col_b = st.columns(2)
     with col_a:
-        first_name = st.text_input("👤 ስምዎን ያስገቡ", placeholder="ለምሳሌ፡ አበበ")
+        first_name = st.text_input("👤 ስምዎን ያስገቡ")
     with col_b:
         username_input = st.text_input("💬 ቴሌግራም", placeholder="@username")
 
